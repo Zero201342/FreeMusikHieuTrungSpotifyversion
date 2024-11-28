@@ -45,15 +45,11 @@
         .playPauseBtn:hover {
             background-color: #b90ea8;
         }
-        #musicInfo {
-            margin-top: 20px;
-        }
     </style>
-    <script src="https://sdk.scdn.co/spotify-player.js"></script>
 </head>
 <body>
     <h1>Spotify Híu Trung</h1>
-    <p>Nhập link Spotify vào ô dưới đây</p>
+    <p>Nhập link Spotify vào ô dưới nhó</p>
     <input type="text" id="spotifyLink" placeholder="Paste Spotify track or playlist link here">
     <br>
     <button onclick="loadMusic()">Đọc suộc</button>
@@ -67,28 +63,6 @@
         var spotifyLink = '';
         var musicPlayerContainer = document.getElementById('player');
         var musicInfo = document.getElementById('musicInfo');
-        var player = null;
-        var accessToken = 'your-access-token'; // Thay thế bằng token của bạn
-        
-        // Cấu hình SDK và kết nối
-        window.onSpotifyWebPlaybackSDKReady = () => {
-            player = new Spotify.Player({
-                name: 'Spotify Web Playback SDK',
-                getOAuthToken: cb => { cb(accessToken); },
-                volume: 0.5
-            });
-
-            player.addListener('initialization_error', ({ message }) => { console.error(message); });
-            player.addListener('authentication_error', ({ message }) => { console.error(message); });
-            player.addListener('account_error', ({ message }) => { console.error(message); });
-            player.addListener('playback_error', ({ message }) => { console.error(message); });
-
-            player.addListener('ready', ({ device_id }) => {
-                console.log('The Web Playback SDK is ready with Device ID', device_id);
-            });
-
-            player.connect();
-        };
 
         function loadMusic() {
             spotifyLink = document.getElementById("spotifyLink").value;
@@ -98,26 +72,18 @@
                 const spotifyArtistId = getSpotifyArtistId(spotifyLink);
 
                 if (spotifyTrackId) {
-                    const spotifyEmbed = `<iframe id="spotifyIframe" src="https://open.spotify.com/embed/track/${spotifyTrackId}" width="300" height="80" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
-                    musicPlayerContainer.innerHTML = spotifyEmbed;
-                    musicInfo.innerHTML = `<p>Đang phát nhạc từ Spotify Track: <a href="${spotifyLink}" target="_blank">${spotifyLink}</a></p>`;
-                    document.getElementById("playPauseBtn").style.display = "inline-block";
-                    iframeElement = document.getElementById('spotifyIframe');
-                    updatePlayPauseButton();
+                    // Mở ứng dụng Spotify nếu là mobile, nếu không mở embed player
+                    openSpotifyApp(spotifyLink);
                 } else if (spotifyPlaylistId) {
-                    const spotifyEmbed = `<iframe id="spotifyIframe" src="https://open.spotify.com/embed/playlist/${spotifyPlaylistId}" width="300" height="80" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
+                    const spotifyEmbed = `<iframe src="https://open.spotify.com/embed/playlist/${spotifyPlaylistId}" width="300" height="80" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
                     musicPlayerContainer.innerHTML = spotifyEmbed;
                     musicInfo.innerHTML = `<p>Đang phát playlist từ Spotify: <a href="${spotifyLink}" target="_blank">${spotifyLink}</a></p>`;
-                    document.getElementById("playPauseBtn").style.display = "inline-block";
-                    iframeElement = document.getElementById('spotifyIframe');
-                    updatePlayPauseButton();
+                    document.getElementById("playPauseBtn").style.display = "inline-block"; 
                 } else if (spotifyArtistId) {
-                    const spotifyEmbed = `<iframe id="spotifyIframe" src="https://open.spotify.com/embed/artist/${spotifyArtistId}" width="300" height="80" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
+                    const spotifyEmbed = `<iframe src="https://open.spotify.com/embed/artist/${spotifyArtistId}" width="300" height="80" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
                     musicPlayerContainer.innerHTML = spotifyEmbed;
                     musicInfo.innerHTML = `<p>Đang phát nhạc từ Spotify Artist: <a href="${spotifyLink}" target="_blank">${spotifyLink}</a></p>`;
-                    document.getElementById("playPauseBtn").style.display = "inline-block";
-                    iframeElement = document.getElementById('spotifyIframe');
-                    updatePlayPauseButton();
+                    document.getElementById("playPauseBtn").style.display = "inline-block"; 
                 } else {
                     alert("Link Spotify không hợp lệ.");
                 }
@@ -142,15 +108,27 @@
             return matches ? matches[1] : null;
         }
 
+        // Hàm mở ứng dụng Spotify trên mobile hoặc mở trang web trên desktop
+        function openSpotifyApp(url) {
+            var userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            
+            if (/android/i.test(userAgent)) {
+                // Trên Android, mở ứng dụng Spotify
+                window.location.href = "spotify://track/" + getSpotifyTrackId(url);
+            } else if (/iPhone|iPad|iPod/i.test(userAgent)) {
+                // Trên iOS, mở ứng dụng Spotify
+                window.location.href = "spotify://track/" + getSpotifyTrackId(url);
+            } else {
+                // Nếu không phải mobile, mở trang web Spotify
+                window.location.href = url;
+            }
+        }
+
         function togglePlayPause() {
             if (isPlaying) {
-                player.pause().then(() => {
-                    console.log("Paused");
-                });
+                iframeElement.contentWindow.postMessage('{"command":"pause"}', '*');
             } else {
-                player.play().then(() => {
-                    console.log("Playing");
-                });
+                iframeElement.contentWindow.postMessage('{"command":"play"}', '*');
             }
             isPlaying = !isPlaying;
             updatePlayPauseButton();
