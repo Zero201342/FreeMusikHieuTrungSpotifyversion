@@ -59,89 +59,79 @@
 
     <script>
         var isPlaying = false;
-        var iframeElement = null;
-        var spotifyLink = '';
-        var musicPlayerContainer = document.getElementById('player');
-        var musicInfo = document.getElementById('musicInfo');
+var iframeElement = null;
+var spotifyLink = '';
+var musicPlayerContainer = document.getElementById('player');
+var musicInfo = document.getElementById('musicInfo');
 
-        function loadMusic() {
-            spotifyLink = document.getElementById("spotifyLink").value;
-            if (spotifyLink) {
-                const spotifyTrackId = getSpotifyTrackId(spotifyLink);
-                const spotifyPlaylistId = getSpotifyPlaylistId(spotifyLink);
-                const spotifyArtistId = getSpotifyArtistId(spotifyLink);
-
-                if (spotifyTrackId) {
-                    // Mở ứng dụng Spotify nếu là mobile, nếu không mở embed player
-                    openSpotifyApp(spotifyLink);
-                } else if (spotifyPlaylistId) {
-                    const spotifyEmbed = `<iframe src="https://open.spotify.com/embed/playlist/${spotifyPlaylistId}" width="300" height="80" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
-                    musicPlayerContainer.innerHTML = spotifyEmbed;
-                    musicInfo.innerHTML = `<p>Đang phát playlist từ Spotify: <a href="${spotifyLink}" target="_blank">${spotifyLink}</a></p>`;
-                    document.getElementById("playPauseBtn").style.display = "inline-block"; 
-                } else if (spotifyArtistId) {
-                    const spotifyEmbed = `<iframe src="https://open.spotify.com/embed/artist/${spotifyArtistId}" width="300" height="80" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
-                    musicPlayerContainer.innerHTML = spotifyEmbed;
-                    musicInfo.innerHTML = `<p>Đang phát nhạc từ Spotify Artist: <a href="${spotifyLink}" target="_blank">${spotifyLink}</a></p>`;
-                    document.getElementById("playPauseBtn").style.display = "inline-block"; 
-                } else {
-                    alert("Link Spotify không hợp lệ.");
-                }
-            }
+function loadMusic() {
+    spotifyLink = document.getElementById("spotifyLink").value;
+    if (spotifyLink) {
+        const spotifyTrackId = getSpotifyTrackId(spotifyLink);
+        const spotifyPlaylistId = getSpotifyPlaylistId(spotifyLink);
+        const spotifyArtistId = getSpotifyArtistId(spotifyLink);  
+        if (spotifyTrackId) {
+            const spotifyEmbed = `<iframe src="https://open.spotify.com/embed/track/${spotifyTrackId}" width="300" height="80" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
+            musicPlayerContainer.innerHTML = spotifyEmbed;
+            musicInfo.innerHTML = `<p>Đang phát nhạc từ Spotify Track: <a href="${spotifyLink}" target="_blank">${spotifyLink}</a></p>`;
+            document.getElementById("playPauseBtn").style.display = "inline-block"; 
+            updatePlayPauseButton(); 
+        } else if (spotifyPlaylistId) {
+            const spotifyEmbed = `<iframe src="https://open.spotify.com/embed/playlist/${spotifyPlaylistId}" width="300" height="80" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
+            musicPlayerContainer.innerHTML = spotifyEmbed;
+            musicInfo.innerHTML = `<p>Đang phát playlist từ Spotify: <a href="${spotifyLink}" target="_blank">${spotifyLink}</a></p>`;
+            document.getElementById("playPauseBtn").style.display = "inline-block"; 
+            updatePlayPauseButton(); 
+        } else if (spotifyArtistId) {  
+            const spotifyEmbed = `<iframe src="https://open.spotify.com/embed/artist/${spotifyArtistId}" width="300" height="80" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
+            musicPlayerContainer.innerHTML = spotifyEmbed;
+            musicInfo.innerHTML = `<p>Đang phát nhạc từ Spotify Artist: <a href="${spotifyLink}" target="_blank">${spotifyLink}</a></p>`;
+            document.getElementById("playPauseBtn").style.display = "inline-block"; 
+            updatePlayPauseButton(); 
+        } else {
+            alert("Link Spotify không hợp lệ.");
         }
+    }
+}
 
-        function getSpotifyTrackId(link) {
-            const regex = /track\/([a-zA-Z0-9]+)/;
-            const matches = link.match(regex);
-            return matches ? matches[1] : null;
-        }
+function getSpotifyTrackId(link) {
+    const regex = /track\/([a-zA-Z0-9]+)/;
+    const matches = link.match(regex);
+    return matches ? matches[1] : null;
+}
 
-        function getSpotifyPlaylistId(link) {
-            const regex = /playlist\/([a-zA-Z0-9]+)/;
-            const matches = link.match(regex);
-            return matches ? matches[1] : null;
-        }
+function getSpotifyPlaylistId(link) {
+    const regex = /playlist\/([a-zA-Z0-9]+)/;
+    const matches = link.match(regex);
+    return matches ? matches[1] : null;
+}
 
-        function getSpotifyArtistId(link) {
-            const regex = /artist\/([a-zA-Z0-9]+)/;
-            const matches = link.match(regex);
-            return matches ? matches[1] : null;
-        }
+function getSpotifyArtistId(link) {
+    const regex = /artist\/([a-zA-Z0-9]+)/;
+    const matches = link.match(regex);
+    return matches ? matches[1] : null;
+}
 
-        // Hàm mở ứng dụng Spotify trên mobile hoặc mở trang web trên desktop
-        function openSpotifyApp(url) {
-            var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            
-            if (/android/i.test(userAgent)) {
-                // Trên Android, mở ứng dụng Spotify
-                window.location.href = "spotify://track/" + getSpotifyTrackId(url);
-            } else if (/iPhone|iPad|iPod/i.test(userAgent)) {
-                // Trên iOS, mở ứng dụng Spotify
-                window.location.href = "spotify://track/" + getSpotifyTrackId(url);
-            } else {
-                // Nếu không phải mobile, mở trang web Spotify
-                window.location.href = url;
-            }
-        }
+function togglePlayPause() {
+    if (isPlaying) {
+        
+        iframeElement.contentWindow.postMessage('{"command":"pause"}', '*');
+    } else {
+        
+        iframeElement.contentWindow.postMessage('{"command":"play"}', '*');
+    }
+    isPlaying = !isPlaying;
+    updatePlayPauseButton();
+}
 
-        function togglePlayPause() {
-            if (isPlaying) {
-                iframeElement.contentWindow.postMessage('{"command":"pause"}', '*');
-            } else {
-                iframeElement.contentWindow.postMessage('{"command":"play"}', '*');
-            }
-            isPlaying = !isPlaying;
-            updatePlayPauseButton();
-        }
-
-        function updatePlayPauseButton() {
-            var button = document.getElementById("playPauseBtn");
-            if (isPlaying) {
-                button.textContent = "Pause";
-            } else {
-                button.textContent = "Play";
-            }
-        }
+function updatePlayPauseButton() {
+    var button = document.getElementById("playPauseBtn");
+    if (isPlaying) {
+        button.textContent = "Pause";
+    } else {
+        button.textContent = "Play";
+    }
+}
     </script>
 </body>
 </html>
